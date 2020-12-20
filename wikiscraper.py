@@ -1,13 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import os
+
 
 
 def wiki_scraper(wiki_url):
     response = requests.get(
         #     url='https://en.wikipedia.org/wiki/List_of_school_shootings_in_the_United_States'
-        #     url = r'https://en.wikipedia.org/wiki/List_of_Star_Wars_characters'
         url=wiki_url
     )
     if response.status_code == 200:
