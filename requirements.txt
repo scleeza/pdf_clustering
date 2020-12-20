@@ -6,4 +6,5 @@ pandas==1.1.4
 spacy_streamlit==0.1.0
 beautifulsoup4==4.9.3
 torch==1.7.0
+lxml==4.5.2
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.2.0/en_core_web_sm-2.2.0.tar.gz#egg=en_core_web_sm
