@@ -1,24 +1,23 @@
-# main gate of app, showing menu on main page
-
 import streamlit as st
 from streamlit.hashing import _CodeHasher
 from streamlit.report_thread import get_report_ctx
 from streamlit.server.server import Server
-import pandas as pd
-from wikiscraper import wiki_scraper
-from page_bert import run_the_nlp
 from page_dataload import run_the_dataloader
+from page_show_data import run_show_data
+from page_text_clean import run_text_clean
+from page_LDA import run_LDA
 
 
 
 def main():
-    state = _get_state()
+    st.sidebar.info('streamlit version: {}'.format(st.__version__))
     st.sidebar.title("What to do")
+    state = _get_state()
+
     pages = {
-        "Show instructions": run_the_instruction,
-        "Load Data": run_the_dataloader,
-        "NLP": run_the_nlp,
-        "Experiment": run_the_exp
+        "1.Load Data": run_the_dataloader,
+        "2.Data Prepare": run_show_data,
+        "3.LDA": run_LDA
     }
     page = st.sidebar.selectbox("Choose the app mode", list(pages.keys()))
     pages[page](state)
@@ -103,6 +102,12 @@ def _get_state(hash_funcs=None):
 
 def run_the_instruction(state):
     st.write('Paste text into context column and type question you want to know')
+
+
+@st.cache
+def get_dataframe(state):
+    return state.df
+
 
 def run_the_exp(state):
     placeholder = st.empty()

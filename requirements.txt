@@ -1,6 +1,6 @@
 requests==2.25.0
 transformers==3.5.1
-streamlit==0.71.0
+streamlit==0.73.0
 spacy==2.3.2
 pandas==1.1.4
 spacy_streamlit==0.1.0
