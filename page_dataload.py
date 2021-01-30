@@ -11,10 +11,7 @@ FILE_TYPES = ['csv', 'pkl']
 def load_data(state):
     if state.upload_way == "By dataframe":
         file = st.file_uploader("Select file", type=FILE_TYPES)
-        if not file:
-            st.info("Please upload a file of type: " + ", ".join(FILE_TYPES))
-
-        else:
+        if file:
             if file.name.endswith('csv'):
                 df = pd.read_csv(file)
                 if st.button('Upload', key='file_upload_csv'):
@@ -33,6 +30,7 @@ def load_data(state):
         if folder_path != '' and upload_but:
             with st.spinner("PDF text extracting..."):
                 try:
+
                     df_extracted = read_all_pdfs(folder_path, int(state.pages_read))
                     state.df = pdf2df(df_extracted)
 
@@ -100,10 +98,11 @@ def pdf2df(extraction_pdfs):
     #         str_list = [str(page) for page in v['unextractable_pages']]
     #         v['unextractable_pages'] = combine_texts(str_list)
     extraction_df = pd.DataFrame.from_dict(
-        {k: [v['pages'], v['unextractable_pages'], v['docs']] for k, v in extraction_pdfs.items() if
+        {k: [v['pages'], v['docs']] for k, v in extraction_pdfs.items() if
          v['encrpyted'] == False}).transpose()
-    extraction_df.columns = ['pages', 'unextractable_pages', 'docs']
-    #extraction_df[extraction_df['doc'].apply(len)>40]
+    extraction_df.columns = ['pages', 'docs']
+
+    extraction_df = extraction_df.loc[extraction_df['docs'].apply(len)>40,:]
 
     return extraction_df
 

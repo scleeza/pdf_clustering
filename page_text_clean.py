@@ -10,7 +10,7 @@ def clean_data(state):
     clean_text = lambda x: clean_text_pipe(x, allowed_postags=state.pos_tag, nlp=nlp)
     with st.spinner('Wait for it...'):
         try:
-            state.df_clean = pd.DataFrame(state.df[state.column].apply(clean_text))
+            state.df[state.column] = state.df[state.column].map(clean_text)
             st.success("data cleaned!")
         except:
             st.info('Something went wrong, check log')
@@ -31,7 +31,7 @@ def chunck_list(lst, chunck_size=5000):
 
 def clean_text_pipe(text, allowed_postags, nlp):
     '''Remove stop words and punctuaion'''
-    BATCH_SIZE = 5000
+    BATCH_SIZE = 1000000
     if len(text) > BATCH_SIZE:
         split_text = chunck_list(text)
         docs = [nlp(t) for t in split_text]

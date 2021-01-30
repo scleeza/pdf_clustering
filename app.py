@@ -4,7 +4,7 @@ from streamlit.hashing import _CodeHasher
 from streamlit.report_thread import get_report_ctx
 from streamlit.server.server import Server
 from page_dataload import load_data
-from page_show_data import build_wordcloud
+from page_show_data import build_wordcloud, plot_cloud
 from page_text_clean import clean_data
 from page_LDA import run_LDA, cluster_data, fit_best_model
 import matplotlib.pyplot as plt
@@ -16,14 +16,13 @@ def main():
     state = _get_state()
     st.sidebar.info('streamlit version: {}'.format(st.__version__))
     st.sidebar.title("What to do")
-    if st.sidebar.button("Initial Settings",key="initial_bt"):
-        initial_state(state)
 
     pages = {"Main": main_app,
              "Setting": setting
              }
     page = st.sidebar.radio("Select your page", tuple(pages.keys()))
     pages[page](state)
+
     state.sync()
 
 
@@ -32,95 +31,110 @@ def main_app(state):
     header = read_markdown_file("markdowns/header.md")
     st.markdown(header, unsafe_allow_html=True)
     # procedure
-    _expander = st.beta_expander("PROCEDURE",expanded=True)
+    _expander = st.beta_expander("PROCEDURE", expanded=False)
     _expander.markdown(read_markdown_file("markdowns/dataload.md"),
                        unsafe_allow_html=True)
     # LDA example
     lda_expander = st.beta_expander("How LDA do")
     lda_expander.markdown((read_markdown_file("markdowns/LDA.md")),
                           unsafe_allow_html=True)
-    st.title("Input Data:")
-    load_df(state)
-    st.title("Cleaned Data:")
-    clean_df(state)
-    st.title('Clustered Data:')
-    cluster_df(state)
-    st.title('Fit Data:')
-    fit_df(state)
+    st.markdown("---")
+    funcs = {"1.Load Data": load_df,
+             "2.Clean Data": clean_df,
+             "3.Cluster Data": cluster_df,
+             "4.Draw Word Cloud": show_wordcloud
+             }
+    func = st.sidebar.selectbox("Select functions", tuple(funcs.keys()))
+    funcs[func](state)
+
+    if st.sidebar.button("Initial Settings", key="initial_bt"):
+        initial_state(state)
+    st.markdown("---")
+    st.title("Data:")
+    st.write(state.df)
+    if st.button("Reset Data", key="reset_bt"):
+        state.df = None
+        state.df_clean = None
+    st.markdown("---")
+    st.title("World Cloud:")
+    all_cloud, one_cloud = st.beta_columns(2)
+    all_cloud.write(state.fig)
+    one_cloud.write(state.one)
+    st.markdown("---")
+
 
 def load_df(state):
+    st.title("Load Data:")
     if state.df is None:
-        st.info('There is no files uploaded, Please input data, select a way to do so')
         state.upload_way = st.radio("Chose one way to upload file:",("By dataframe","By PDFs"))
         load_data(state)
     else:
-        st.dataframe(state.df)
-        #st.plotly_chart(plotly_table(state.df))
-        if st.button("Reset Data",key="reset_bt"):
-            state.df =None
-            state.df_clean =None
+        st.info("Data has been load")
 
 
 
 def clean_df(state):
+    st.title("Clean Data:")
     if state.df is None:
-        st.info("There is no files uploaded, Please input data at Input Data block")
+        st.info("There is no files uploaded, Please load data first")
     else:
         state.column = st.selectbox("Chose Columnn Names:", list(state.df.columns),key="clean_bt")
         if st.button('Clean'):
             clean_data(state)
-    if state.df_clean is not None:
-        st.write('Cleaned Data:')
-        st.dataframe(state.df_clean.head(3))
+    # if state.df_clean is not None:
+    #     st.write('Cleaned Data:')
+    #     st.dataframe(state.df_clean.head(3))
 
 def cluster_df(state):
-    if state.df_clean is None:
-        st.info("There is no files uploaded, Please input data at Input Data block")
+    st.title("Cluster Data:")
+    if state.df is None:
+        st.info("There is no files uploaded, Please load data first")
     else:
-        st.write("Number of topics:{}".format(state.lda_topics))
-        if st.button('Run Trials', key='cluster_bt'):
+        c1,c2 = st.beta_columns((2,1))
+        c1.write("run {} clusters test" .format(state.lda_topics))
+        if c1.button('Run Trials', key='cluster_bt'):
             with st.spinner("Clustering"):
                 state.scores,state.lda_models, state.corpus = cluster_data(state)
-                st.success("Done!")
+                c1.success("Done!")
         try:
             TOPICS_LIST = range(1, state.lda_topics + 1)
-            fig, ax = plt.subplots(figsize=(5, 3))
+            fig, ax = plt.subplots(figsize=(3, 2))
             sns.lineplot(x=TOPICS_LIST, y=state.scores, ax=ax)
             plt.title('Coherence_scores')
             plt.xlabel('TOPICS')
             plt.ylabel('Scores')
-            st.pyplot(fig)
+            c1.pyplot(fig)
         except:
-            st.info("Press run trials")
+            c1.info("Press run trials")
+        state.chose_num = c1.slider("Chose best cluster number, the one with largest score",min_value=1,max_value=10,value=state.chose_num)
+        if c1.button("Fit LDA models", key='lda_fit'):
+            topic_lst = fit_best_model(state.chose_num, lda_models=state.lda_models, corpus=state.corpus)
+            state.df['topic'] = topic_lst
+            c1.success("Done")
 
+# def fit_df(state):
+#     if state.df_clean is None:
+#         st.info("There is no files uploaded, Please load data first")
+#     else:
+#         chose_topic = st.number_input("Chose best topics", min_value=1, max_value=10, value=5)
+#         state.chose_topic = chose_topic
+#         if st.button("Fit LDA models", key='lda_fit'):
+#             topic_lst = fit_best_model(chose_topic, lda_models=state.lda_models, corpus=state.corpus)
+#             state.df_clean['topic'] = topic_lst
 
-def fit_df(state):
-    if state.df_clean is None:
-        st.info("There is no files uploaded, Please input data at Input Data block")
-    else:
-        chose_topic = st.number_input("Chose best topics", min_value=1, max_value=10, value=5)
-        state.chice_topic = chose_topic
-        if st.button("Fit LDA models", key='lda_fit'):
-            topic_lst = fit_best_model(chose_topic, lda_models=state.lda_models, corpus=state.corpus)
-            state.df_clean['topic'] = topic_lst
-        wordcloud = build_wordcloud(state.df_clean.loc[state.df_clean.topic==2,:], state.column)
-        fig = plt.figure(figsize=(6, 6), facecolor=None)
-        plt.imshow(wordcloud)
-        plt.axis("off")
-        plt.tight_layout(pad=0)
-        st.pyplot(fig)
 
 def show_wordcloud(state):
-    if state.df_clean is None:
-        st.info("There is no files uploaded, Please input data at Input Data block")
+    st.subheader('Word cloud')
+    if state.df is None:
+        st.info("There is no files uploaded, Please load data first")
     else:
-        wordcloud = build_wordcloud(state.df_clean.loc[state.df_clean.topic == 2, :], state.column)
-        fig = plt.figure(figsize=(6, 6), facecolor=None)
-        plt.imshow(wordcloud)
-        plt.axis("off")
-        plt.tight_layout(pad=0)
-        st.pyplot(fig)
+        # wordcloud = build_wordcloud(state.df, state.column)
+        # state.fig = plot_cloud(wordcloud)
 
+        specific_one = st.selectbox("select topic index",list(range(state.chose_num)))
+        if st.button('Plot',key="word_plot"):
+            one_cloud = build_wordcloud(state.df.loc[state.df['topic'] == int(specific_one), :], state.column)
+            state.one = plot_cloud(one_cloud)
 
 
 def initial_state(state):
@@ -128,31 +142,13 @@ def initial_state(state):
         state.pages_read = 10
         state.pos_tag = ['PROPN', 'NOUN', 'ADJ', 'VERB', 'ADV']
         state.lda_topics = 5
+        state.chose_num = 5
         state.min_count = 5
         state.threshold = 10
         state.initial = True
+        state.no_below = 5
+        state.no_above = 500
 
-
-def setting_test(state):
-    initial_state(state)
-    st.sidebar.subheader("Import Setting")
-    pages_read = st.sidebar.text_input('Read how many pages per file (avoid running too long)',
-                                     value=str(state.pages_read))
-    state.pages_read = int(pages_read)
-    st.sidebar.subheader("Clean Setting")
-    state.pos_tag = st.sidebar.multiselect(label='Choose POS Tag:',
-                                           options=['PROPN', 'NOUN', 'ADJ', 'VERB', 'ADV', 'AUX', 'ADP', 'SYM','NUM'],
-                                           default=state.pos_tag)
-    st.sidebar.subheader("LDA Topics")
-    state.lda_topics = st.sidebar.number_input("# of Topics you want to try",min_value=1,max_value=10,value=state.lda_topics)
-
-    st.sidebar.subheader("Bigram setting")
-    min_count = st.sidebar.text_input('Min Occupancy',
-                               value=str(state.min_count))
-    state.min_count = int(min_count)
-    threshold = st.sidebar.text_input('Threshold',
-                               value=str(state.threshold))
-    state.threshold = threshold
 
 def setting(state):
     st.title("Setting")
@@ -164,9 +160,14 @@ def setting(state):
     pos_tag = st.multiselect(label='Choose POS Tag:',
                                            options=['PROPN', 'NOUN', 'ADJ', 'VERB', 'ADV', 'AUX', 'ADP', 'SYM','NUM'],
                                            default=state.pos_tag)
-    st.subheader("LDA Topics")
-    lda_topics = st.number_input("# of Topics you want to try",min_value=1,max_value=10,value=state.lda_topics)
+    st.subheader("Embedding Model:")
 
+    st.subheader("LDA Topics")
+    lda_topics = st.slider("# of Topics you want to try",min_value=1,max_value=10,value=state.lda_topics)
+
+    st. subheader('Word Frequency filter:')
+    no_below = st.slider("Select Word that at least appear N times",min_value=1,max_value=100,value=state.no_below)
+    no_above = st.slider("select Word that not appear over N times",min_value=200,max_value=1000,value=state.no_above)
     st.subheader("Bigram setting")
     min_count = st.text_input('Min Occupancy',
                                value=str(state.min_count))
@@ -180,6 +181,8 @@ def setting(state):
     state.lda_topics =lda_topics
     state.min_count = int(min_count)
     state.threshold = threshold
+    state.no_below = no_below
+    state.no_above = no_above
 
 # Helper functions
 
@@ -279,9 +282,7 @@ def run_the_instruction(state):
     st.write('Paste text into context column and type question you want to know')
 
 
-@st.cache
-def get_dataframe(state):
-    return state.df
+
 
 
 def run_the_exp(state):

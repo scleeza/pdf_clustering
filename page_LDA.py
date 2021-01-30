@@ -17,7 +17,7 @@ def cluster_data(state):
     # Create Corpus
     texts = INPUT
     # Filter out words that occur less than and greater than
-    id2word.filter_extremes(no_below=5)
+    id2word.filter_extremes(no_below=state.no_below,no_above=state.no_above)
     # Term Document Frequency
     corpus = [id2word.doc2bow(text) for text in texts]
     tfidf = TfidfModel(corpus)
@@ -156,7 +156,7 @@ def tokenize_text(text):
 
 def make_bigrams(state):
     # consider some word may occur in bigram format like New York
-    pure_text = state.df_clean[state.column].tolist()
+    pure_text = state.df[state.column].tolist()
     pure_token = list(map(tokenize_text, pure_text))
     bigram = gensim.models.Phrases(pure_token, min_count=int(state.min_count), threshold=int(state.threshold))
     bigram_mod = gensim.models.phrases.Phraser(bigram)

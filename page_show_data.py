@@ -32,7 +32,7 @@ def build_wordcloud(df,col):
 
 def plot_cloud(wordcloud):
     # Set figure size
-    fig = plt.figure(figsize=(40, 30))
+    fig = plt.figure(figsize=(6, 6))
     # Display image
     plt.imshow(wordcloud)
     # No axis details
