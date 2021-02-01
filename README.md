@@ -13,7 +13,7 @@
 - 1.Using bag of words to conduct LDA
 - 2.Using Tf-idf to conduct LDA
 - [code](https://github.com/scleeza/pdf_clustering/blob/master/page_LDA.py)
-## 4. Performance 🚧 
+## 4. Visualize 🚧 
 - 1.Coherence value
 - 2.Wordcloud
 - [code](https://github.com/scleeza/pdf_clustering/blob/master/page_show_data.py)
