@@ -1,4 +1,4 @@
-# PDF extraction and visualization
+# PDF Clustering
 
 ## 1. Import Data ☑️
 - Import from folder: using pypdf2 to conduct text extraction, might not be accurate but quite fast.
