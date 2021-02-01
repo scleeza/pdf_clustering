@@ -7,7 +7,7 @@
 ## 2. Data Preparation ☑️
 - Including clean puncatuation, remove stop word, and lemmatization.
 - Tokenization(considering bigrams).
-- Using spaCy to do POS filteration.(e.g. NOUN, ADJ,VERB...etc)
+- Using spaCy to do POS filteration.(e.g. NOUN, ADJ, VERB...etc)
 - [code](https://github.com/scleeza/sia_clean_text/blob/master/page_text_clean.py)
 ## 3. Topic Clustering ☑️ 
 - 1.Using bag of words to conduct LDA
