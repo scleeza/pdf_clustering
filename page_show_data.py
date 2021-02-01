@@ -8,25 +8,26 @@ import en_core_web_sm
 
 def build_wordcloud(df,col):
 
-    comment_words = ''
+    # comment_words = ''
     stopwords = set(STOPWORDS)
-    for val in df[col]:
-        # typecaste each val to string
-        val = str(val)
-
-        # split the value
-        tokens = val.split()
-
-        # Converts each token into lowercase
-        for i in range(len(tokens)):
-            tokens[i] = tokens[i].lower()
-
-        comment_words += " ".join(tokens) + " "
+    # for val in df[col]:
+    #     # typecaste each val to string
+    #     val = str(val)
+    #
+    #     # split the value
+    #     tokens = val.split()
+    #
+    #     # Converts each token into lowercase
+    #     for i in range(len(tokens)):
+    #         tokens[i] = tokens[i].lower()
+    #
+    #     comment_words += " ".join(tokens) + " "
+    corpus = combine_texts(df[col].tolist())
 
     wordcloud = WordCloud(width=800, height=800,
                           background_color='white',
                           stopwords=stopwords,
-                          min_font_size=10).generate(comment_words)
+                          min_font_size=10).generate(corpus)
     return wordcloud
 
 

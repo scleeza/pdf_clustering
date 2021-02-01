@@ -6,7 +6,7 @@ from streamlit.server.server import Server
 from page_dataload import load_data
 from page_show_data import build_wordcloud, plot_cloud
 from page_text_clean import clean_data
-from page_LDA import run_LDA, cluster_data, fit_best_model
+from page_LDA import run_LDA, cluster_data, fit_best_model, fit_model
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.graph_objects as go
@@ -42,7 +42,7 @@ def main_app(state):
     funcs = {"1.Load Data": load_df,
              "2.Clean Data": clean_df,
              "3.Cluster Data": cluster_df,
-             "4.Draw Word Cloud": show_wordcloud
+             #"4.Draw Word Cloud": show_wordcloud
              }
     func = st.sidebar.selectbox("Select functions", tuple(funcs.keys()))
     funcs[func](state)
@@ -56,11 +56,12 @@ def main_app(state):
         state.df = None
         state.df_clean = None
     st.markdown("---")
-    st.title("World Cloud:")
-    all_cloud, one_cloud = st.beta_columns(2)
-    all_cloud.write(state.fig)
-    one_cloud.write(state.one)
+    st.title('Word Cloud:')
+    c1,c2 =st.beta_columns(2)
+    c1.write(state.fig)
+    c2.write(state.one)
     st.markdown("---")
+
 
 
 def load_df(state):
@@ -108,7 +109,8 @@ def cluster_df(state):
             c1.info("Press run trials")
         state.chose_num = c1.slider("Chose best cluster number, the one with largest score",min_value=1,max_value=10,value=state.chose_num)
         if c1.button("Fit LDA models", key='lda_fit'):
-            topic_lst = fit_best_model(state.chose_num, lda_models=state.lda_models, corpus=state.corpus)
+            #topic_lst = fit_best_model(state.chose_num, lda_models=state.lda_models, corpus=state.corpus)
+            topic_lst = fit_model(state)
             state.df['topic'] = topic_lst
             c1.success("Done")
 
@@ -128,18 +130,21 @@ def show_wordcloud(state):
     if state.df is None:
         st.info("There is no files uploaded, Please load data first")
     else:
-        # wordcloud = build_wordcloud(state.df, state.column)
-        # state.fig = plot_cloud(wordcloud)
+        #specific_one = st.selectbox("select topic index", list(range(state.chose_num)))
+        wordcloud = build_wordcloud(state.df, state.column)
+        state.fig = plot_cloud(wordcloud)
 
-        specific_one = st.selectbox("select topic index",list(range(state.chose_num)))
-        if st.button('Plot',key="word_plot"):
-            one_cloud = build_wordcloud(state.df.loc[state.df['topic'] == int(specific_one), :], state.column)
-            state.one = plot_cloud(one_cloud)
+        #one_cloud = build_wordcloud(state.df.loc[state.df['topic'] == int(specific_one), :], state.column)
+        one_cloud = build_wordcloud(state.df.loc[state.df['topic'] == 0, :], state.column)
+        state.one = plot_cloud(one_cloud)
+        # if st.button('Plot',key="word_plot"):
+        #     one_cloud = build_wordcloud(state.df.loc[state.df['topic'] == int(specific_one), :], state.column)
+        #     state.one = plot_cloud(one_cloud)
 
 
 def initial_state(state):
     if state.intial is None:
-        state.pages_read = 10
+        state.pages_read = 5
         state.pos_tag = ['PROPN', 'NOUN', 'ADJ', 'VERB', 'ADV']
         state.lda_topics = 5
         state.chose_num = 5

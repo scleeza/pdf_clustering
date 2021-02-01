@@ -49,8 +49,28 @@ def fit_best_model(chose_topic,lda_models,corpus):
 
     return lst
 
+def fit_model(state):
+    # Bigram model
+    data_words_bigrams = make_bigrams(state)
+    INPUT = data_words_bigrams
+    # Create Dictionary
+    id2word = corpora.Dictionary(INPUT)
+    # Create Corpus
+    texts = INPUT
+    # Filter out words that occur less than and greater than
+    id2word.filter_extremes(no_below=state.no_below, no_above=state.no_above)
+    # Term Document Frequency
+    corpus = [id2word.doc2bow(text) for text in texts]
+    lda_model = run_LDA_model(corpus, id2word, state.chose_num)
+    corpus_trans = lda_model[corpus]
+    # see which topics they are
+    lst = []
+    for i in corpus_trans:
+        lst.append(i[0][0][0])
 
+    return lst
 
+    return coherence_scores, lda_models, corpus
 
 
 
