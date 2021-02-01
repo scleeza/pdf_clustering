@@ -1,6 +1,6 @@
 # PDF extraction and visualization
 
-☑️  ## 1. Import Data
+## 1. Import Data ☑️
 
    1 Import from folder: using pypdf2 to conduct text extraction, might not be accurate but quite fast.
    2 Import from file: read csv/pickle type files that have include text data inside.
