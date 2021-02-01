@@ -1,63 +1,49 @@
-
+"""Functions related to load data"""
 import streamlit as st
-from pathlib import Path
 import os
 import PyPDF2
 import pandas as pd
 
-FILE_TYPES =['csv', 'pkl']
+# Define parameters
+FILE_TYPES = ['csv', 'pkl']
 
-def run_the_dataloader(state):
-    ''' run the function loading data '''
-    intro_markdown = read_markdown_file("dataload.md")
-    st.markdown(intro_markdown, unsafe_allow_html=True)
-    st.title("Import Files:")
-    # declare expander component
-    upload_expander = st.beta_expander('Upload by file')
-    file = upload_expander.file_uploader("Select file", type=FILE_TYPES)
-    folder_expander = st.beta_expander('Upload by folder')
-    show_file = upload_expander.empty()
+# main function of loading data
+def load_data(state):
+    if state.upload_way == "By dataframe":
+        file = st.file_uploader("Select file", type=FILE_TYPES)
+        if file:
+            if file.name.endswith('csv'):
+                df = pd.read_csv(file)
+                if st.button('Upload', key='file_upload_csv'):
+                    state.df = df
 
-    with upload_expander:
-        if not file:
-            show_file.info("Please upload a file of type: " + ", ".join(FILE_TYPES))
-        elif file.name.endswith('csv'):
-            df = pd.read_csv(file)
-            if st.button('Upload', key='file_upload_csv'):
-                state.df = df
-                st.write(state.df)
-        elif file.name.endswith('pkl'):
-            df = pd.read_pickle(file)
-            if st.button('Upload', key='file_upload_pkl'):
-                state.df = df
-                st.write(state.df)
-    with folder_expander:
+            elif file.name.endswith('pkl'):
+                df = pd.read_pickle(file)
+                if st.button('Upload', key='file_upload_pkl'):
+                    state.df = df
+
+            file.close()
+
+    else:
         folder_path = st.text_input('Path of directory')
-        page_read = st.text_input('Read how many pages per file (avoid running too long)', value='10')
         upload_but = st.button('Upload', key='folder_upload')
         if folder_path != '' and upload_but:
-            read_all_pdfs(folder_path, int(page_read))
-            st.write(state.df)
-    if file:
-        file.close()
+            with st.spinner("PDF text extracting..."):
+                try:
 
+                    df_extracted = read_all_pdfs(folder_path, int(state.pages_read))
+                    state.df = pdf2df(df_extracted)
 
+                except:
+                    st.info("Input valid folder path, please try again")
 
-
-
-
-def read_markdown_file(markdown_file):
-    return Path(markdown_file).read_text()
-
+# Helper functions
 def text_input(label):
     return st.text_input(label)
 
 
-@st.cache
-def get_dataframe(state):
-    return state.df
 
-def read_all_pdfs(FILE_PATH,page_read):
+def read_all_pdfs(FILE_PATH, pages_read):
     '''read all pdf files from given folder path and return '''
     file_list = [f for f in os.listdir(path=FILE_PATH) if f.endswith('.pdf') or f.endswith('.PDF')]
     # PDF extraction
@@ -82,7 +68,7 @@ def read_all_pdfs(FILE_PATH,page_read):
                 buff_dict['encrpyted'] = False
                 buff_dict['pages'] = pages
                 # loop over all pages and extract text, if not extractable, the page number will be recored
-                for page in range(page_read):
+                for page in range(pages_read):
                     pageObj = pdfReader.getPage(page)
                     try:
                         text_per_page = pageObj.extractText()
@@ -98,11 +84,30 @@ def read_all_pdfs(FILE_PATH,page_read):
             except:
                 buff_dict['encrpyted'] = True
                 extraction_pdfs[file_name] = buff_dict
+
                 continue
 
         extraction_pdfs[file_name] = buff_dict
+    return extraction_pdfs
 
-# some helper function
+
+def pdf2df(extraction_pdfs):
+    # transfer unreadable_pages list into a string list in order to create dataframes
+    # for k, v in extraction_pdfs.items():
+    #     if v['encrpyted'] == False:
+    #         str_list = [str(page) for page in v['unextractable_pages']]
+    #         v['unextractable_pages'] = combine_texts(str_list)
+    extraction_df = pd.DataFrame.from_dict(
+        {k: [v['pages'], v['docs']] for k, v in extraction_pdfs.items() if
+         v['encrpyted'] == False}).transpose()
+    extraction_df.columns = ['pages', 'docs']
+
+    extraction_df = extraction_df.loc[extraction_df['docs'].apply(len)>40,:]
+
+    return extraction_df
+
+
+
 def combine_texts(list_of_text):
     '''Taking a list of texts and combining them into one large chunk of text.'''
     combined_text = ' '.join(list_of_text)

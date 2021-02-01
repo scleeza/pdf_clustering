@@ -1,11 +1,78 @@
 from gensim import corpora
 import gensim
-from gensim.models import LdaModel, CoherenceModel
+from gensim.models import LdaModel, CoherenceModel,TfidfModel
 import streamlit as st
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+from wordcloud import WordCloud, STOPWORDS
 from collections import defaultdict
+
+def cluster_data(state):
+    # Bigram model
+    data_words_bigrams = make_bigrams(state)
+    INPUT = data_words_bigrams
+    # Create Dictionary
+    id2word = corpora.Dictionary(INPUT)
+    # Create Corpus
+    texts = INPUT
+    # Filter out words that occur less than and greater than
+    id2word.filter_extremes(no_below=state.no_below,no_above=state.no_above)
+    # Term Document Frequency
+    corpus = [id2word.doc2bow(text) for text in texts]
+    tfidf = TfidfModel(corpus)
+    corpus_tfidf = tfidf[corpus]
+    TOPICS_LIST = range(1, state.lda_topics + 1)
+    lda_models = []
+    coherence_scores = []
+    for TOPICS in TOPICS_LIST:
+        lda_model = run_LDA_model(corpus, id2word, TOPICS)
+        lda_models.append(lda_model)
+
+        coherence_model_lda = CoherenceModel(model=lda_model, texts=data_words_bigrams, dictionary=id2word,
+                                             coherence='c_v')
+        score = coherence_model_lda.get_coherence()
+        coherence_scores.append(score)
+
+    return coherence_scores, lda_models,corpus
+
+def fit_best_model(chose_topic,lda_models,corpus):
+    topic_num = chose_topic-1
+
+    best_lda_model = lda_models[topic_num]
+
+    corpus_trans = best_lda_model[corpus]
+    # see which topics they are
+    lst = []
+    for i in corpus_trans:
+        lst.append(i[0][0][0])
+
+    return lst
+
+def fit_model(state):
+    # Bigram model
+    data_words_bigrams = make_bigrams(state)
+    INPUT = data_words_bigrams
+    # Create Dictionary
+    id2word = corpora.Dictionary(INPUT)
+    # Create Corpus
+    texts = INPUT
+    # Filter out words that occur less than and greater than
+    id2word.filter_extremes(no_below=state.no_below, no_above=state.no_above)
+    # Term Document Frequency
+    corpus = [id2word.doc2bow(text) for text in texts]
+    lda_model = run_LDA_model(corpus, id2word, state.chose_num)
+    corpus_trans = lda_model[corpus]
+    # see which topics they are
+    lst = []
+    for i in corpus_trans:
+        lst.append(i[0][0][0])
+
+    return lst
+
+    return coherence_scores, lda_models, corpus
+
+
 
 def run_LDA(state):
     # to Bigrams
@@ -107,10 +174,11 @@ def tokenize_text(text):
     token_list = text.split()
     return token_list
 
-def make_bigrams(df_clean,select_col):
-    pure_text = df_clean[select_col].tolist()
+def make_bigrams(state):
+    # consider some word may occur in bigram format like New York
+    pure_text = state.df[state.column].tolist()
     pure_token = list(map(tokenize_text, pure_text))
-    bigram = gensim.models.Phrases(pure_token, min_count=5, threshold=10)
+    bigram = gensim.models.Phrases(pure_token, min_count=int(state.min_count), threshold=int(state.threshold))
     bigram_mod = gensim.models.phrases.Phraser(bigram)
     return [bigram_mod[doc] for doc in pure_token]
 

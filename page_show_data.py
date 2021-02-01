@@ -6,25 +6,34 @@ import matplotlib.pyplot as plt
 import en_core_web_sm
 
 
+def build_wordcloud(df,col):
 
+    # comment_words = ''
+    stopwords = set(STOPWORDS)
+    # for val in df[col]:
+    #     # typecaste each val to string
+    #     val = str(val)
+    #
+    #     # split the value
+    #     tokens = val.split()
+    #
+    #     # Converts each token into lowercase
+    #     for i in range(len(tokens)):
+    #         tokens[i] = tokens[i].lower()
+    #
+    #     comment_words += " ".join(tokens) + " "
+    corpus = combine_texts(df[col].tolist())
 
-def run_show_data(state):
-    """ run data exploratory page"""
-    st.title('Data Pre-processing')
-    st.write('Choose 1.Column and 2.POS tags and 3.press clean')
-    dataframe_expander = st.beta_expander('Loaded Data')
-    state.text_col_name = st.sidebar.selectbox("1.Choose text column:", list(state.df.columns))
-    with dataframe_expander:
-        st.write('Dataframe')
-        st.dataframe(state.df)
-        st.write('Column info')
-        st.write(state.df[state.text_col_name].apply(len).describe())
-    run_text_clean(state)
+    wordcloud = WordCloud(width=800, height=800,
+                          background_color='white',
+                          stopwords=stopwords,
+                          min_font_size=10).generate(corpus)
+    return wordcloud
 
 
 def plot_cloud(wordcloud):
     # Set figure size
-    fig = plt.figure(figsize=(40, 30))
+    fig = plt.figure(figsize=(6, 6))
     # Display image
     plt.imshow(wordcloud)
     # No axis details
@@ -54,6 +63,16 @@ def run_text_clean(state):
                 st.write(df_clean)
     else:
         cleaned_dataspace.info('Choose 1.Column and 2.POS tags and 3.press clean')
+        # if context != '':
+        #     doc = nlp(context)
+        #     spacy_streamlit.visualize_ner(doc,
+        #                                   labels=nlp.get_pipe("ner").labels,
+        #                                   title="spaCy NER",
+        #                                   sidebar_title=None,
+        #                                   show_table=False)
+        #
+        #     clean_func = lambda x: clean_text_pipe(x, nlp, allowed_postags=allowed_postag)
+        #     st.write(clean_func(context))
 
 
 def chunck_list(lst, chunck_size=5000):
