@@ -19,7 +19,7 @@
 - [code](https://github.com/scleeza/sia_clean_text/blob/master/page_show_data.py)
 
 ## Others 🚧 
--OCR 
+- OCR 
 
 ## Notebooks
 - [notebooks](https://github.com/scleeza/NLP_notebooks)
