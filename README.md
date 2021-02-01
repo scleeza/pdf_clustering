@@ -16,7 +16,7 @@
 ## 4. Performance 🚧 
 - 1.Coherence value
 - 2.Wordcloud
-- [code]((https://github.com/scleeza/Data_visualization/blob/master/page_show_data.py)
+- [code](https://github.com/scleeza/Data_visualization/blob/master/page_show_data.py)
 
 ## Others 🚧 
 -OCR 
