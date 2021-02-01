@@ -3,7 +3,7 @@
 ## 1. Import Data ☑️
 - Import from folder: using pypdf2 to conduct text extraction, might not be accurate but quite fast.
 - Import from file: read csv/pickle type files that have include text data inside.
-- [code](https://github.com/scleeza/Data_visualization/blob/master/page_dataload.py)   
+- [code](https://github.com/scleeza/sian/blob/master/page_dataload.py)   
 ## 2. Data Preparation ☑️
 - Including clean puncatuation, remove stop word, and lemmatization.
 - Tokenization(considering bigrams).
@@ -21,3 +21,5 @@
 ## Others 🚧 
 -OCR 
 
+## Notebooks
+- [notebooks](https://github.com/scleeza/NLP_notebooks)
